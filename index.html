@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .feed {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .post {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .sponsored {
+            background: #fff8dc;
+        }
+        #data-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .button {
+            background: #1877f2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        #participant-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Participant Info Form -->
+    <div id="participant-form" class="feed">
+        <h2>Participant Information</h2>
+        <div>
+            <label>Participant ID: </label>
+            <input type="text" id="participant-id">
+        </div>
+        <br>
+        <div>
+            <label>Group: </label>
+            <select id="group-type">
+                <option value="control">Control</option>
+                <option value="treatment">Treatment</option>
+            </select>
+        </div>
+        <br>
+        <button class="button" onclick="startExperiment()">Start Experiment</button>
+    </div>
+
+    <!-- Data Collection Panel -->
+    <div id="data-panel" style="display: none;">
+        <h3>Experiment Data</h3>
+        <p>Time spent: <span id="timer">0:00</span></p>
+        <p>Interactions: <span id="interaction-count">0</span></p>
+        <button class="button" onclick="endExperiment()">End Session</button>
+        <div id="session-data"></div>
+    </div>
+
+    <div class="feed" id="content" style="display: none;">
+        <!-- Regular Post -->
+        <div class="post" onclick="recordInteraction('regular_post_1')">
+            <div class="post-header">
+                <div class="profile-pic"></div>
+                <div>
+                    <div class="name">Sarah Chen</div>
+                    <div class="time">2 hours ago</div>
+                </div>
+            </div>
+            <div class="content">
+                Just got my morning coffee from the new café downtown! ☕️
+            </div>
+            <img src="/api/placeholder/600/400" alt="Coffee shop photo" style="width:100%; border-radius:8px; margin:12px 0;">
+            <div class="interactions">
+                <div>❤️ 24 Likes</div>
+                <div>💬 5 Comments</div>
+                <div>↗️ Share</div>
+            </div>
+        </div>
+        
+        <!-- Sponsored Post -->
+        <div class="post sponsored" onclick="recordInteraction('sponsored_post')">
+            <div class="post-header">
+                <div class="profile-pic"></div>
+                <div>
+                    <div class="name">TechGear Pro</div>
+                    <div class="time">Sponsored</div>
+                </div>
+            </div>
+            <div class="content">
+                Experience the future of computing with our new XPS 15 laptop
+                • 4K OLED Display
+                • 32GB RAM
+                • AI-powered performance
+            </div>
+            <img src="/api/placeholder/600/400" alt="Laptop photo" style="width:100%; border-radius:8px; margin:12px 0;">
+            <div class="interactions">
+                <div>❤️ 1.2k Likes</div>
+                <div>💬 89 Comments</div>
+                <div>🛒 Learn More</div>
+            </div>
+        </div>
+
+        <!-- Regular Post -->
+        <div class="post" onclick="recordInteraction('regular_post_2')">
+            <div class="post-header">
+                <div class="profile-pic"></div>
+                <div>
+                    <div class="name">Mike Rodriguez</div>
+                    <div class="time">4 hours ago</div>
+                </div>
+            </div>
+            <div class="content">
+                Beautiful sunset at the beach today! 🌅
+            </div>
+            <img src="/api/placeholder/600/400" alt="Beach sunset" style="width:100%; border-radius:8px; margin:12px 0;">
+            <div class="interactions">
+                <div>❤️ 156 Likes</div>
+                <div>💬 12 Comments</div>
+                <div>↗️ Share</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let startTime;
+        let interactions = [];
+        
+        function startExperiment() {
+            const participantId = document.getElementById('participant-id').value;
+            if (!participantId) {
+                alert('Please enter participant ID');
+                return;
+            }
+            
+            document.getElementById('participant-form').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+            document.getElementById('data-panel').style.display = 'block';
+            
+            startTime = new Date();
+            startTimer();
+        }
+
+        function recordInteraction(elementId) {
+            interactions.push({
+                element: elementId,
+                time: new Date().getTime() - startTime.getTime()
+            });
+            document.getElementById('interaction-count').textContent = interactions.length;
+        }
+
+        function endExperiment() {
+            const endTime = new Date();
+            const duration = (endTime - startTime) / 1000; // in seconds
+            
+            const experimentData = {
+                participantId: document.getElementById('participant-id').value,
+                group: document.getElementById('group-type').value,
+                duration: duration,
+                interactions: interactions
+            };
+
+            // Display data for copying
+            document.getElementById('session-data').innerHTML = 
+                '<textarea rows="10" cols="40">' + 
+                JSON.stringify(experimentData, null, 2) + 
+                '</textarea>';
+            
+            // Download data
+            downloadData(experimentData);
+        }
+
+        function downloadData(data) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `participant_${data.participantId}_data.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function startTimer() {
+            setInterval(() => {
+                const now = new Date();
+                const diff = Math.floor((now - startTime) / 1000);
+                const minutes = Math.floor(diff / 60);
+                const seconds = diff % 60;
+                document.getElementById('timer').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
